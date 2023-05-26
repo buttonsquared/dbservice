@@ -1,29 +1,34 @@
 package com.busybee.dbservice.model
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import jakarta.persistence.Column
 import jakarta.persistence.MappedSuperclass
-import org.springframework.util.SerializationUtils
-import java.io.Serializable
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "className")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIgnoreProperties(ignoreUnknown = true)
-abstract class AbstractModel : Serializable {
-    fun deepCopy(): AbstractModel {
-        return SerializationUtils.clone(this)
-    }
-
-    open fun getId(): Long? {
-        return null
-    }
-}
-
-@JsonTypeInfo(use = JsonTypeInfo.Id.CLASS, include = JsonTypeInfo.As.PROPERTY, property = "className")
-@JsonInclude(JsonInclude.Include.NON_NULL)
-@JsonIgnoreProperties(ignoreUnknown = true)
 @MappedSuperclass
-abstract class AbstractDatedModel {
+abstract class AbstractDatedModel : DatedModel {
+    @Column(name = "created_date")
+    val createdDate: Long = System.currentTimeMillis()
+
+    @Column(name = "modified_date")
+    var modifiedDate: Long? = null
+
+    @Column(name = "created_by")
+    var createdBy: String? = null
+
+    @Column(name = "modified_by")
+    var modifiedBy: String? = null
+
+    override fun setModelModifiedDate(modifiedDate: Long) {
+        this.modifiedDate = modifiedDate
+    }
+
+    override fun setModelCreatedBy(createdBy: String) {
+        this.createdBy = createdBy
+    }
+
+    override fun setModelModifiedBy(modifiedBy: String) {
+        this.modifiedBy = modifiedBy
+    }
 }
 

@@ -11,13 +11,20 @@ import java.util.*
 
 @Repository
 class JpaDao(val em: EntityManager) : Dao {
+    override fun <E : AppModel> save(model: E, saveChildren: Boolean): E? {
+        return saveModel(model)
+    }
     override fun <E : DatedModel> save(model: E, user: SystemUser, saveChildren: Boolean): E? {
-        return saveModel(model, user)
+        return saveDatedModel(model, user)
     }
 
-    private fun <E : DatedModel> saveModel(model: E, user: SystemUser): E {
+    private fun <E : DatedModel> saveDatedModel(model: E, user: SystemUser): E {
         beforeUpdateOrCreate(model, user)
-        return if (model.getId() == null) {
+        return saveModel(model)
+    }
+
+    private fun <E : AppModel> saveModel(model: E): E {
+        return if (model.getModelId() == null) {
             em.persist(model)
             model
         } else {
@@ -26,11 +33,10 @@ class JpaDao(val em: EntityManager) : Dao {
     }
 
     private fun <E : DatedModel> beforeUpdateOrCreate(model: E, user: SystemUser) {
-        model.setModifiedDate(Date().time)
-        model.setModifiedBy(user)
-        if (model.getId() == null) {
-            model.setCreatedDate(Date().time)
-            model.setCreatedBy(user)
+        model.setModelModifiedDate(Date().time)
+        model.setModelModifiedBy(user.getUsername())
+        if (model.getModelId() == null) {
+            model.setModelCreatedBy(user.getUsername())
         }
     }
 
@@ -43,7 +49,7 @@ class JpaDao(val em: EntityManager) : Dao {
     }
 
     override fun <E : AppModel> findById(type: Class<E>, id: Long): E? {
-        TODO("Not yet implemented")
+        return em.find(type, id)
     }
 
     override fun <E : AppModel> findByPropertyKey(type: Class<E>, propertyKeyMap: Map<String, Any>): List<E> {

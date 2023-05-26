@@ -3,30 +3,31 @@ package com.busybee.dbservice.model
 import java.io.Serializable
 
 interface AppModel : Serializable {
-    fun deepCopy(): AppModel
-    fun getId(): Long?
+    fun getModelId(): Long?
 }
 
 interface DatedModel : AppModel {
-    fun setCreatedDate(createdDate: Long?)
-    fun setModifiedDate(modifiedDate: Long?)
-    fun setCreatedBy(createdBy: SystemUser?)
-    fun setModifiedBy(modifiedBy: SystemUser?)
-
+    fun setModelModifiedDate(modifiedDate: Long)
+    fun setModelCreatedBy(createdBy: String)
+    fun setModelModifiedBy(modifiedBy: String)
+    fun uniquePropertyKeyMap(): Map<String, Any>
 }
 
 interface SystemUser {
-    fun getId(): Long?
 
     fun getFullName(): String?
 
-    fun getUserName(): String?
+    fun getSystemRoles(): List<SystemRole>
 
-    fun getSystemRoles(): List<SystemRole>?
+    fun getUsername(): String
 }
 
 interface SystemRole {
-    fun getRoleName(): String?
+    fun getModelRoleName(): String
 
-    fun isActive(): Boolean = true
+}
+
+
+interface Deletable {
+    fun setModelActive(active: Boolean)
 }

@@ -5,6 +5,8 @@ import com.busybee.dbservice.model.DatedModel
 import com.busybee.dbservice.model.SystemUser
 
 interface Dao {
+    fun <E : AppModel> save(model: E, saveChildren: Boolean = false): E?
+
     fun <E : DatedModel> save(model: E, user: SystemUser, saveChildren: Boolean = false): E?
 
     fun <E : DatedModel> save(models: List<E>, user: SystemUser, saveChildren: Boolean = false): List<E>
