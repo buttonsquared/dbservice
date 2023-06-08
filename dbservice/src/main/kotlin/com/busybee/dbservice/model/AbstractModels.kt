@@ -30,5 +30,9 @@ abstract class AbstractDatedModel : DatedModel {
     override fun setModelModifiedBy(modifiedBy: String) {
         this.modifiedBy = modifiedBy
     }
+
+    override fun uniquePropertyKeyMap(): Map<String, Any> {
+        return mapOf()
+    }
 }
 

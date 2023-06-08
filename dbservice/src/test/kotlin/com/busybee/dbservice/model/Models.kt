@@ -12,30 +12,30 @@ import org.springframework.security.core.userdetails.UserDetails
 @Entity
 @Table(name = "APPLICATION_USER")
 data class UserImpl(
-        @Id
+    @Id
         @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "userSeq")
         @SequenceGenerator(name = "userSeq", sequenceName = "APPLICATION_USER_SEQ", allocationSize = 1)
         var id: Long? = null,
 
-        @Column(name = "username", unique = true, nullable = false, length = 45)
+    @Column(name = "username", unique = true, nullable = false, length = 45)
         var login: String,
 
-        @Column(name = "firstname")
+    @Column(name = "firstname")
         val firstName: String? = null,
 
-        @Column(name = "lastname")
+    @Column(name = "lastname")
         var lastName: String? = null,
 
-        @Column(name = "active", length = 1, nullable = false)
+    @Column(name = "active", length = 1, nullable = false)
         var active: Boolean = true,
 
-        @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.EAGER)
         @JoinTable(name = "USER_ROLE", joinColumns = [JoinColumn(name = "user_id", referencedColumnName = "id")], inverseJoinColumns = [JoinColumn(name = "role_id", referencedColumnName = "id", unique = false)])
         @Fetch(FetchMode.SELECT)
         var roles: List<RoleImpl> = ArrayList<RoleImpl>(),
 
 
-        ) : AbstractDatedModel(), SystemUser, DatedModel, Deletable, UserDetails {
+    ) : AbstractDatedModel(), SystemUser, DatedModel, Deletable, UserDetails {
 
 
     override fun getFullName(): String? {

@@ -6,16 +6,23 @@ import com.busybee.dbservice.model.AppModel
 import com.busybee.dbservice.model.DatedModel
 import com.busybee.dbservice.model.SystemUser
 import jakarta.persistence.EntityManager
+import jakarta.persistence.TypedQuery
 import org.springframework.stereotype.Repository
 import java.util.*
+import java.util.function.Predicate
+
 
 @Repository
 class JpaDao(val em: EntityManager) : Dao {
-    override fun <E : AppModel> save(model: E, saveChildren: Boolean): E? {
+    override fun <E : AppModel> save(model: E): E {
         return saveModel(model)
     }
-    override fun <E : DatedModel> save(model: E, user: SystemUser, saveChildren: Boolean): E? {
+    override fun <E : DatedModel> save(model: E, user: SystemUser): E {
         return saveDatedModel(model, user)
+    }
+
+    override fun <E : DatedModel> save(models: List<E>, user: SystemUser): List<E> {
+        return models.map { saveModel(it) }
     }
 
     private fun <E : DatedModel> saveDatedModel(model: E, user: SystemUser): E {
@@ -40,24 +47,17 @@ class JpaDao(val em: EntityManager) : Dao {
         }
     }
 
-    override fun <E : DatedModel> save(models: List<E>, user: SystemUser, saveChildren: Boolean): List<E> {
-        TODO("Not yet implemented")
-    }
-
     override fun permanentlyDelete(model: AppModel) {
-        TODO("Not yet implemented")
+        em.remove(model)
     }
 
     override fun <E : AppModel> findById(type: Class<E>, id: Long): E? {
         return em.find(type, id)
     }
 
-    override fun <E : AppModel> findByPropertyKey(type: Class<E>, propertyKeyMap: Map<String, Any>): List<E> {
-        TODO("Not yet implemented")
-    }
-
     override fun <E : AppModel> findByPropertyKey(type: Class<E>, propertyKeyMap: Map<String, Any>, offset: Int?, maxResults: Int?, orderBy: Map<String, OrderBy>, distinctColumns: List<String>): List<E> {
-        TODO("Not yet implemented")
+        val query: TypedQuery<E> = generateQueryForPropertyKeyList(type, propertyKeyMap, offset, maxResults)
+        return query.resultList
     }
 
     override fun <E : AppModel> countByPropertyKey(type: Class<E>, propertyKeyMap: Map<String, Any>, distinct: List<String>): Int {
@@ -75,4 +75,29 @@ class JpaDao(val em: EntityManager) : Dao {
     override fun findBySQLQuery(sql: String, params: Map<String, Any>, scalars: List<String>): List<Any> {
         TODO("Not yet implemented")
     }
+
+    private fun <E : AppModel> generateQueryForPropertyKeyList(type: Class<E>, propertyKeyMap: Map<String, Any>, offset: Int?, maxResults: Int?): TypedQuery<E> {
+        val criteriaBuilder = em.criteriaBuilder
+        val criteriaQuery = criteriaBuilder.createQuery(type)
+        val root = criteriaQuery.from(type)
+        val m = em.metamodel
+        val entity_ = m.entity(type)
+        criteriaQuery.select(root)
+
+        val preds = propertyKeyMap.entries.map { (k, v) ->
+            criteriaBuilder.equal(root.get(entity_.getDeclaredSingularAttribute(k)), v)
+        }
+
+        criteriaQuery.where(
+            *preds.toTypedArray()
+        )
+        offset?.let {o ->
+            maxResults?.let {mr ->
+                return em.createQuery(criteriaQuery).setFirstResult(offset).setMaxResults(maxResults)
+            }
+        }
+        return em.createQuery(criteriaQuery)
+    }
+
+
 }

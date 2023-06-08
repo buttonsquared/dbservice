@@ -5,19 +5,17 @@ import com.busybee.dbservice.model.DatedModel
 import com.busybee.dbservice.model.SystemUser
 
 interface Dao {
-    fun <E : AppModel> save(model: E, saveChildren: Boolean = false): E?
+    fun <E : AppModel> save(model: E): E?
 
-    fun <E : DatedModel> save(model: E, user: SystemUser, saveChildren: Boolean = false): E?
+    fun <E : DatedModel> save(model: E, user: SystemUser): E?
 
-    fun <E : DatedModel> save(models: List<E>, user: SystemUser, saveChildren: Boolean = false): List<E>
+    fun <E : DatedModel> save(models: List<E>, user: SystemUser): List<E>
 
     fun permanentlyDelete(model: AppModel)
 
     fun <E : AppModel> findById(type: Class<E>, id: Long): E?
 
-    fun <E : AppModel> findByPropertyKey(type: Class<E>, propertyKeyMap: Map<String, Any>): List<E>
-
-    fun <E : AppModel> findByPropertyKey(type: Class<E>, propertyKeyMap: Map<String, Any>, offset: Int?, maxResults: Int?, orderBy: Map<String, OrderBy> = mapOf(), distinctColumns: List<String> = listOf()): List<E>
+    fun <E : AppModel> findByPropertyKey(type: Class<E>, propertyKeyMap: Map<String, Any>, offset: Int? = null, maxResults: Int? = null, orderBy: Map<String, OrderBy> = mapOf(), distinctColumns: List<String> = listOf()): List<E>
 
     fun <E : AppModel> countByPropertyKey(type: Class<E>, propertyKeyMap: Map<String, Any>, distinct: List<String> = listOf()): Int
 
