@@ -4,7 +4,6 @@ import com.busybee.dbservice.model.AbstractDatedModel
 import com.busybee.dbservice.model.DatedModel
 import com.busybee.dbservice.model.SystemRole
 import com.busybee.dbservice.model.SystemUser
-import com.busybee.dbservice.model.specbook.embedded.EmailAddress
 import com.busybee.dbservice.model.specbook.enums.Status
 import jakarta.persistence.*
 
@@ -31,7 +30,7 @@ class User (
     val status: Status? = null,
 
     @Column(unique = true, name = "EMAIL")
-    val emailAddress: EmailAddress? = null,
+    val emailAddress: String? = null,
 
     @ManyToMany
     @JoinTable(
@@ -45,7 +44,7 @@ class User (
         return id
     }
 
-    override fun getFullName(): String? {
+    override fun getFullName(): String {
         return "$firstname $lastname"
     }
 

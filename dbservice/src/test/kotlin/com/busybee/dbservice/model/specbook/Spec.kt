@@ -10,7 +10,7 @@ import org.hibernate.annotations.FetchMode
 
 @Entity
 @Table(name = "SPEC")
-class Spec(
+data class Spec(
     @Id
     @SequenceGenerator(name = "specIdGen", sequenceName = "SPEC_SEQ", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "specIdGen")
@@ -24,12 +24,12 @@ class Spec(
         joinColumns = [JoinColumn(name = "SPECID", referencedColumnName = "SPECID")],
         inverseJoinColumns = [JoinColumn(name = "SPECSTEPID", referencedColumnName = "SPECSTEPID")]
     )
-    var steps: List<SpecStep> = ArrayList(),
+    var steps: List<SpecStep> = listOf(),
 
     @OneToMany(mappedBy = "spec")
     @Fetch(value = FetchMode.SELECT)
     @OrderColumn(name = "ORDERRANK")
-    val clients: List<SpecClient> = java.util.ArrayList(),
+    var clients: List<SpecClient> = listOf(),
 
     @Column(name = "SPECNAME")
     var name: String? = null,
@@ -87,7 +87,7 @@ class Spec(
     }
 
     override fun hashCode(): Int {
-        if (id == null) {
+        return if (id == null) {
             var result = steps.hashCode()
             result = 31 * result + clients.hashCode()
             result = 31 * result + (name?.hashCode() ?: 0)
@@ -98,9 +98,9 @@ class Spec(
             result = 31 * result + (parentSpecId?.hashCode() ?: 0)
             result = 31 * result + (specState?.hashCode() ?: 0)
             result = 31 * result + (locked?.hashCode() ?: 0)
-            return result
+            result
         } else {
-            return id.hashCode()
+            id.hashCode()
         }
     }
 }

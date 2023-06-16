@@ -2,16 +2,19 @@ package com.busybee.dbservice.dao.jpa
 
 import jakarta.annotation.PostConstruct
 import jakarta.persistence.EntityManager
-import org.hibernate.metamodel.model.domain.internal.EntityTypeImpl
-import org.springframework.stereotype.Repository
+import org.springframework.stereotype.Service
 
-@Repository
+@Service
 class DBGraph(val em: EntityManager) {
+    val entityMap = mutableMapOf<String, FieldAnnotation>()
     @PostConstruct
     fun init() {
         em.metamodel.entities.forEach {
-            println((it as EntityTypeImpl).pathName)
-            println(it.javaClass)
+            entityMap[it.bindableJavaType.name] = FieldAnnotation(it.bindableJavaType)
         }
+    }
+
+    fun getEntity(entityName: String): FieldAnnotation {
+        return entityMap[entityName]!!
     }
 }

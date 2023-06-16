@@ -1,6 +1,5 @@
 package com.busybee.dbservice.dao.jpa
 
-import com.busybee.dbservice.model.DatedModel
 import com.busybee.dbservice.model.RoleImpl
 import com.busybee.dbservice.model.UserImpl
 import com.busybee.dbservice.model.specbook.Spec
@@ -10,16 +9,15 @@ import org.junit.jupiter.api.Test
 
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
-import kotlin.reflect.full.declaredMembers
-import kotlin.reflect.full.functions
-import kotlin.reflect.full.isSubtypeOf
-import kotlin.reflect.typeOf
 
 @SpringBootTest
 class JpaDaoTest {
 
     @Autowired
     lateinit var dao: JpaDao
+
+    @Autowired
+    lateinit var graph: DBGraph
 
     @Test
     @Transactional
@@ -97,10 +95,10 @@ class JpaDaoTest {
     @Test
     @Transactional
     fun `reflection test`() {
-        val specClass = Spec::class
-        specClass.functions.forEach {
-            it.returnType.isSubtypeOf(typeOf<DatedModel>())
-            println("${it.name} ${it.returnType}")
-        }
+        val f = FieldAnnotation(Spec::class.java)
+        assertThat(f.fieldMap.size).isEqualTo(15)
+        assertThat(f.getMethodMap.size).isEqualTo(16)
+        assertThat(f.setMethodMap.size).isEqualTo(11)
+        assertThat(f.datedNbcModelCollection.size).isEqualTo(2)
     }
 }

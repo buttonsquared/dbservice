@@ -15,7 +15,7 @@ class SpecClient(
     var id: Long? = null,
 
     @ManyToOne
-    @JoinColumn(name = "SPECID", nullable = false)
+    @JoinColumn(name = "SPECID")
     @JsonIgnore
     var spec: Spec? = null,
 
@@ -41,7 +41,7 @@ class SpecClient(
         other as SpecClient
 
         if (id == null && other.id == null) {
-            if (spec != other.spec) return false
+//            if (spec != other.spec) return false
             if (specbookClient != other.specbookClient) return false
             if (testingStatusAuditList != other.testingStatusAuditList) return false
             if (orderRank != other.orderRank) return false
@@ -53,14 +53,14 @@ class SpecClient(
     }
 
     override fun hashCode(): Int {
-        if (id == null) {
-            var result = spec?.hashCode() ?: 0
-            result = 31 * result + (specbookClient?.hashCode() ?: 0)
+        return if (id == null) {
+    //            var result = spec?.hashCode() ?: 0
+            var result = 31 * (specbookClient?.hashCode() ?: 0)
             result = 31 * result + testingStatusAuditList.hashCode()
             result = 31 * result + orderRank
-            return result
+            result
         } else {
-            return id.hashCode()
+            id.hashCode()
         }
     }
 }

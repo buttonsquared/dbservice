@@ -3,11 +3,10 @@ package com.busybee.dbservice.model.specbook
 import com.busybee.dbservice.model.AbstractDatedModel
 import com.busybee.dbservice.model.DatedModel
 import jakarta.persistence.*
-import org.hibernate.Hibernate
 
 @Entity
 @Table(name = "ACTIONVALUE")
-class ActionValue(
+data class ActionValue (
     @Id
     @SequenceGenerator(name = "actionValueIdGen", sequenceName = "ACTIONVALUE_SEQ", allocationSize = 1)
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "actionValueIdGen")
@@ -31,7 +30,7 @@ class ActionValue(
 
 ) : AbstractDatedModel(), DatedModel {
     override fun getModelId(): Long? {
-        return id;
+        return id
     }
 
     override fun equals(other: Any?): Boolean {
@@ -52,12 +51,12 @@ class ActionValue(
     }
 
     override fun hashCode(): Int {
-        if (id == null) {
+        return if (id == null) {
             var result = actionName?.hashCode() ?: 0
             result = 31 * result + answers.hashCode()
-            return result
+            result
         } else {
-            return id.hashCode()
+            id.hashCode()
         }
     }
 
