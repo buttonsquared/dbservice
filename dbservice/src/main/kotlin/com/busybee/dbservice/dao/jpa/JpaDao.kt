@@ -11,7 +11,10 @@ import jakarta.persistence.criteria.Join
 import jakarta.persistence.criteria.JoinType
 import jakarta.persistence.criteria.Predicate
 import jakarta.persistence.criteria.Root
+import jakarta.persistence.metamodel.EntityType
+import jakarta.persistence.metamodel.SingularAttribute
 import org.springframework.stereotype.Repository
+import java.lang.reflect.ParameterizedType;
 import java.util.*
 
 
@@ -81,41 +84,46 @@ class JpaDao(val em: EntityManager, val dbGraph: DBGraph) : Dao {
     }
 
     private fun <E : AppModel> generateQueryForPropertyKeyList(type: Class<E>, propertyKeyMap: Map<String, Any>, offset: Int?, maxResults: Int?): TypedQuery<E> {
-        val fieldAnnotation = dbGraph.getEntity(type.name)
+        var fieldAnnotation = dbGraph.getEntity(type.name)
         val criteriaBuilder = em.criteriaBuilder
         val criteriaQuery = criteriaBuilder.createQuery(type)
         val root = criteriaQuery.from(type)
         val metaModel = em.metamodel
+        val predicates = mutableListOf<Predicate>()
 
-        val predicateMap = mapOf<String, Predicate>()
         propertyKeyMap.entries.map { (key, value) ->
-            val keys = key.split("\\.")
-            var joins = mutableListOf<Any>()
-            var types = mutableListOf<Any>()
-            keys.forEachIndexed { index, key ->
-                if (fieldAnnotation.datedNbcModelCollection.containsKey(key)) {
-                     val keyType = fieldAnnotation.datedNbcModelCollection[key]!!.genericType.javaClass
-                    val joinFieldAnnotation = dbGraph.getEntity(keyType.name)
-                    if (joins.isEmpty()) {
-                        joins.add(doJoin(root, type, keyType, key))
-                    } else {
-                        joins.add(doJoinFromJoin(getJoin(joins.last(), type , keyType), type, keyType, key))
-                    }
+            val keys = key.split(".")
+            val joins = mutableListOf<Join<*, *>>()
+            val types = mutableListOf<Class<*>>()
+            val entities = mutableMapOf<String, EntityType<*>>()
 
+            types.add(type)
+            entities[type.name] = metaModel.entity(type)
+
+            keys.forEachIndexed { index, k ->
+                if (fieldAnnotation.datedNbcModelCollection.containsKey(k)) {
+                    val keyType = (fieldAnnotation.datedNbcModelCollection[k]!!.genericType as ParameterizedType).actualTypeArguments[0] as Class<*>
+                    entities[keyType.name] = metaModel.entity(getTypeX(keyType))
+                    fieldAnnotation = dbGraph.getEntity(keyType.name)
                     types.add(keyType)
+
+                    if (joins.isEmpty()) {
+                        joins.add(doJoin(root, getTypeE(types[0]), getTypeT(types[1]), k))
+                    } else {
+                        joins.add(doJoinFromJoin(getJoin(joins.last(), getTypeE(getFromTypeFromList(types)), getTypeT(getToTypeFromList(types))), type, getTypeX(getNewToTypeFromList(types)), k))
+                    }
+                } else if (joins.isEmpty()) {
+                    predicates.add(criteriaBuilder.equal(root.get(getSingularAttribute(entities, keys.last(), getTypeX(getNewToTypeFromList(types)), getTypeY(value::class.java))), value))
+                } else {
+                    predicates.add(criteriaBuilder.equal(getJoin(joins.last(), getTypeE(getToTypeFromList(types)), getTypeT(getNewToTypeFromList(types))).get(getSingularAttribute(entities, keys.last(), getTypeX(types.last()), getTypeY(value::class.java) )), value))
                 }
             }
         }
 
-        val entity_ = metaModel.entity(type)
         criteriaQuery.select(root)
 
-        val preds = propertyKeyMap.entries.map { (k, v) ->
-            criteriaBuilder.equal(root.get(entity_.getDeclaredSingularAttribute(k)), v)
-        }
-
         criteriaQuery.where(
-                *preds.toTypedArray()
+                *predicates.toTypedArray()
         )
         offset?.let { o ->
             maxResults?.let { mr ->
@@ -125,38 +133,27 @@ class JpaDao(val em: EntityManager, val dbGraph: DBGraph) : Dao {
         return em.createQuery(criteriaQuery)
     }
 
-    fun <E> processKey(root: Root<E>, fieldAnnotation: FieldAnnotation, keys: List<String>, index: Int, from: Class<E>) {
-        if (fieldAnnotation.datedNbcModelCollection.containsKey(keys[index])) {
-            val keyType = fieldAnnotation.datedNbcModelCollection[keys[index]]!!.javaClass
-            val join = doJoin(root, from, keyType, keys[index])
-
-            val increment = index + 1
-            val joinFieldAnnotation = dbGraph.getEntity(keyType.name)
-            return processKey(join, joinFieldAnnotation, keys, increment, index, from, keyType)
-        }
+    fun <X, Y> getSingularAttribute(entities: MutableMap<String, EntityType<*>>, key: String, first: Class<X>, second: Class<Y>): SingularAttribute<X, Y> {
+        val entity = getEntityTypeE(entities[first.name]!!, second)
+        return entity.getDeclaredSingularAttribute(key) as SingularAttribute<X, Y>
     }
 
-    fun <E, T> processKey(join: Join<E, T>, fieldAnnotation: FieldAnnotation, keys: List<String>, index: Int, from: Class<E>, to: Class<T>): Join<E, T> {
-        if (fieldAnnotation.datedNbcModelCollection.containsKey(keys[index])) {
-            val keyType = fieldAnnotation.datedNbcModelCollection[keys[index]]!!.genericType.javaClass
-            val newJoin = doJoinFromJoin(join, from, keyType, keys[index])
+    fun <E: AppModel, T: AppModel> getJoin(join: Any, from: Class<E>, to: Class<T>): Join<E, T> = join as Join<E,T>
 
-            val increment = index + 1
-            val joinFieldAnnotation = dbGraph.getEntity(keyType.name)
-            return processKey(newJoin, joinFieldAnnotation, keys, increment, index, keyType)
-        }
-        return join
-    }
-
-    fun <E, T> getJoin(join: Any, from: Class<E>, to: Class<T>): Join<E, T> {
-        return join as Join<E,T>
-    }
+    fun getFromTypeFromList(types: MutableList<Class<*>>) = types[types.size - 3]
+    fun getToTypeFromList(types: MutableList<Class<*>>) = types[types.size - 2]
+    fun getNewToTypeFromList(types: MutableList<Class<*>>) = types.last()
+    fun <E> getEntityTypeE(entity: Any, clazz: Class<E>): EntityType<E> = entity as EntityType<E>
+    fun <E: AppModel> getTypeE(clazz: Any): Class<E> = clazz as Class<E>
+    fun <T: AppModel> getTypeT(clazz: Any): Class<T> = clazz as Class<T>
+    fun <X: AppModel> getTypeX(clazz: Any): Class<X> = clazz as Class<X>
+    fun <Y: AppModel> getTypeY(clazz: Any): Class<Y> = clazz as Class<Y>
 
     fun <E, T> doJoin(root: Root<E>, from: Class<E>, to: Class<T>, property: String, joinType: JoinType = JoinType.INNER): Join<E, T> =
         root.join(property, joinType)
 
 
-    fun <E, T, X, Y> doJoinFromJoin(join: Join<E, T>, from: Class<X>, to: Class<Y>, property: String, joinType: JoinType = JoinType.INNER): Join<E, T> =
+    fun <E, T, X, Y> doJoinFromJoin(join: Join<E, T>, from: Class<X>, to: Class<Y>, property: String, joinType: JoinType = JoinType.INNER): Join<X, Y> =
         join.join(property, joinType)
 
 
